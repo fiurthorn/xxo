@@ -9,7 +9,6 @@ type Board struct {
 	player1 *Player
 	player2 *Player
 
-	winner *Player
 	fields [9]*Player
 }
 
@@ -27,12 +26,36 @@ func NewBoard() *Board {
 	}
 }
 
+func (b *Board) inALine(k, l, m Pos) bool {
+	K, L, M := b.GetPos(k), b.GetPos(l), b.GetPos(m)
+
+	return K == L && L == M && M != b.empty
+}
+
 func (b *Board) Winner() *Player {
-	return b.winner
+	if b.inALine(Pos{0, 0}, Pos{1, 1}, Pos{2, 2}) {
+		return b.GetXY(1, 1)
+	}
+
+	if b.inALine(Pos{2, 0}, Pos{1, 1}, Pos{0, 2}) {
+		return b.GetXY(1, 1)
+	}
+
+	for i := 0; i < 3; i++ {
+		if b.inALine(Pos{0, i}, Pos{1, i}, Pos{2, i}) {
+			return b.GetXY(i, i)
+		}
+		if b.inALine(Pos{i, 0}, Pos{i, 1}, Pos{i, 2}) {
+			return b.GetXY(i, i)
+		}
+	}
+
+	return b.empty
 }
 
 func (b *Board) Won() bool {
-	return b.winner != nil && b.winner != b.empty
+	winner := b.Winner()
+	return winner != nil && winner != b.empty
 }
 
 func (b *Board) Stopped() bool {
@@ -52,42 +75,94 @@ func (b *Board) Remaining() int {
 // TODO
 func (b *Board) Rating() {}
 
-func (b *Board) coord(xy string) int {
-	x := xy[0] - 'a'
-	y := xy[1] - '1'
-	return int(y*3 + x)
+func (b *Board) byCoord(xy string) int {
+	x := int(xy[0] - 'a')
+	y := int(xy[1] - '1')
+	if x < 0 || y < 0 || x > 2 || y > 2 {
+		panic(fmt.Sprintf("pos out of range: %#v", xy))
+	}
+	return b.byXY(x, y)
 }
 
-func (b *Board) index(x, y int) int {
-	return (y-1)*3 + (x - 1)
+func (b *Board) byPos(p Pos) int {
+	if p.X < 0 || p.Y < 0 || p.X > 2 || p.Y > 2 {
+		panic(fmt.Sprintf("pos out of range: %#v", p))
+	}
+	return b.byXY(p.Y, p.X)
 }
 
-func (b *Board) IsEmpty(x, y int) bool {
-	return b.fields[b.index(x, y)] == b.empty
+func (b *Board) byIndex(index int) int {
+	if index < 0 || index > 8 {
+		panic(fmt.Sprintf("index out of range %+v", index))
+	}
+	return index
 }
 
-func (b *Board) IsEmptyS(xy string) bool {
-	return b.fields[b.coord(xy)] == b.empty
+func (b *Board) byXY(x, y int) int {
+	if x < 0 || y < 0 || x > 2 || y > 2 {
+		panic(fmt.Sprintf("pos out of range: %#v, %#v", x, y))
+	}
+	return y*3 + x
 }
 
-func (b *Board) Get(x, y int) *Player {
-	return b.fields[b.index(x, y)]
+func (b *Board) IsEmpty(index int) bool {
+	return b.fields[b.byIndex(index)] == b.empty
 }
 
-func (b *Board) GetS(xy string) *Player {
-	return b.fields[b.coord(xy)]
+func (b *Board) IsEmptyPos(p Pos) bool {
+	return b.IsEmpty(b.byPos(p))
 }
 
-func (b *Board) Set(x, y int, player *Player) {
-	b.fields[b.index(x, y)] = player
+func (b *Board) IsEmptyXY(x, y int) bool {
+	return b.IsEmpty(b.byXY(x, y))
 }
 
-func (b *Board) SetS(xy string, player *Player) {
-	b.fields[b.coord(xy)] = player
+func (b *Board) IsEmptyCoord(xy string) bool {
+	return b.IsEmpty(b.byCoord(xy))
+}
+
+func (b *Board) Get(index int) *Player {
+	return b.fields[b.byIndex(index)]
+}
+
+func (b *Board) GetXY(x, y int) *Player {
+	return b.Get(b.byXY(x, y))
+}
+
+func (b *Board) GetPos(p Pos) *Player {
+	return b.Get(b.byPos(p))
+}
+
+func (b *Board) GetCoord(xy string) *Player {
+	return b.Get(b.byCoord(xy))
+}
+
+func (b *Board) Reset(index int) {
+	b.fields[b.byIndex(index)] = b.empty
+}
+
+func (b *Board) Set(index int, player *Player) {
+	if b.Won() {
+		panic("game already ended!")
+	}
+	b.fields[b.byIndex(index)] = player
+}
+
+func (b *Board) SetPos(p Pos, player *Player) {
+	b.Set(b.byPos(p), player)
+}
+
+func (b *Board) SetXY(x, y int, player *Player) {
+	b.Set(b.byXY(x, y), player)
+}
+
+func (b *Board) SetCoord(xy string, player *Player) {
+	b.Set(b.byCoord(xy), player)
 }
 
 func (b *Board) String() string {
-	return fmt.Sprintf(` 3 | %s | %s | %s
+	return fmt.Sprintf(`
+ 3 | %s | %s | %s
 ---+---+---+---
  2 | %s | %s | %s
 ---+---+---+---
