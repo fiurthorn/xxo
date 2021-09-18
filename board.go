@@ -28,7 +28,6 @@ func NewBoard() *Board {
 
 func (b *Board) inALine(k, l, m Pos) bool {
 	K, L, M := b.GetPos(k), b.GetPos(l), b.GetPos(m)
-
 	return K == L && L == M && M != b.empty
 }
 
@@ -171,7 +170,7 @@ func (b *Board) String() string {
    | a | b | c 
  `,
 		b.fields[6], b.fields[7], b.fields[8],
-		b.fields[5], b.fields[4], b.fields[3],
+		b.fields[3], b.fields[4], b.fields[5],
 		b.fields[0], b.fields[1], b.fields[2],
 	)
 }

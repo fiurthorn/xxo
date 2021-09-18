@@ -1,12 +1,18 @@
 package main
 
 import (
-	"fmt"
 	"image/color"
+	"log"
+	"math/rand"
+	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 )
+
+func init() {
+	rand.Seed(time.Now().UnixNano())
+}
 
 type Game struct {
 	board *Board
@@ -43,36 +49,36 @@ func (g *Game) opposite(player *Player) *Player {
 	return g.board.player1
 }
 
+func (g *Game) BestMove(player *Player) int {
+	solutions := Solutions{[]int{}}
+	_ = g.minimax(player, &solutions)
+
+	index := rand.Intn(len(solutions.moves))
+	return solutions.moves[index]
+}
+
 func (g *Game) minimax(player *Player, sol *Solutions) int {
 	if g.board.Won() || g.board.Remaining() == 0 {
 		return g.rating(player)
 	}
 
-	j := 0
 	bestScore := -1000
-	for i := 0; i < 8; i++ {
-		// fmt.Printf("index: %d\n", i)
-		//   var xy = board.pos(i);
+	for i := 0; i < 9; i++ {
 		if g.board.IsEmpty(i) {
-			j++
 			g.board.Set(i, player)
 			score := -g.minimax(g.opposite(player), nil)
 			g.board.Reset(i)
 			if score > bestScore {
 				if sol != nil {
-					for len(sol.moves) > 0 {
-						sol.moves = []int{}
-					}
+					sol.moves = []int{}
 				}
 				bestScore = score
 			}
 			if bestScore == score && sol != nil {
 				sol.moves = append(sol.moves, i)
-				fmt.Printf("%v %v %v %v\n", i, bestScore, score, sol.moves)
 			}
 		}
 	}
-	fmt.Printf("j:%d\n", j)
 	return bestScore
 }
 
@@ -90,9 +96,16 @@ func main() {
 	// 	log.Fatal(err)
 	// }
 
-	fmt.Println(g.board)
+	player := g.board.player1
+	log.Printf("%s", g.board)
+	for g.board.Remaining() > 0 {
+		if g.board.Won() {
+			break
+		}
+		move := g.BestMove(player)
+		g.board.Set(move, player)
+		player = g.opposite(player)
+	}
+	log.Printf("%s", g.board)
 
-	solutions := Solutions{[]int{}}
-	fmt.Println(g.minimax(g.board.player1, &solutions))
-	fmt.Println(solutions)
 }
