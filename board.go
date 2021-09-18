@@ -2,14 +2,53 @@ package main
 
 import (
 	"fmt"
+	"image/color"
+	"log"
+
+	"golang.org/x/image/font"
+	"golang.org/x/image/font/gofont/goregular"
+	"golang.org/x/image/font/opentype"
+
+	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/text"
 )
+
+const (
+	size       = 3
+	tileSize   = 80
+	tileMargin = 4
+)
+
+var (
+	tileImage = ebiten.NewImage(tileSize, tileSize)
+	f         font.Face
+)
+
+func init() {
+	var err error
+
+	tileImage.Fill(color.White)
+	goreg, err := opentype.Parse(goregular.TTF)
+	if err != nil {
+		fmt.Errorf("goregular: %w", err)
+	}
+
+	f, err = opentype.NewFace(goreg, &opentype.FaceOptions{
+		Size:    32,
+		DPI:     72,
+		Hinting: font.HintingFull,
+	})
+	if err != nil {
+		fmt.Errorf("font face: %w", err)
+	}
+}
 
 type Board struct {
 	empty   *Player
 	player1 *Player
 	player2 *Player
 
-	fields [9]*Player
+	fields [size * size]*Player
 }
 
 func NewBoard() *Board {
@@ -18,12 +57,18 @@ func NewBoard() *Board {
 		empty:   empty,
 		player1: PlayerX(),
 		player2: PlayerO(),
-		fields: [9]*Player{
+		fields: [size * size]*Player{
 			empty, empty, empty,
 			empty, empty, empty,
 			empty, empty, empty,
 		},
 	}
+}
+
+func (b *Board) Size() (int, int) {
+	x := size*tileSize + (size+1)*tileMargin
+	y := x
+	return x, y
 }
 
 func (b *Board) inALine(k, l, m Pos) bool {
@@ -142,7 +187,8 @@ func (b *Board) Reset(index int) {
 
 func (b *Board) Set(index int, player *Player) {
 	if b.Won() {
-		panic("game already ended!")
+		log.Println("game already ended!")
+		return
 	}
 	b.fields[b.byIndex(index)] = player
 }
@@ -173,4 +219,50 @@ func (b *Board) String() string {
 		b.fields[3], b.fields[4], b.fields[5],
 		b.fields[0], b.fields[1], b.fields[2],
 	)
+}
+
+func colorToScale(clr color.Color) (float64, float64, float64, float64) {
+	r, g, b, a := clr.RGBA()
+	rf := float64(r) / 0xffff
+	gf := float64(g) / 0xffff
+	bf := float64(b) / 0xffff
+	af := float64(a) / 0xffff
+	// Convert to non-premultiplied alpha components.
+	if 0 < af {
+		rf /= af
+		gf /= af
+		bf /= af
+	}
+	return rf, gf, bf, af
+}
+
+func (bb *Board) Draw(boardImage *ebiten.Image) {
+	boardImage.Fill(frameColor)
+	for j := 0; j < size; j++ {
+		for i := 0; i < size; i++ {
+			// v := 0
+			op := &ebiten.DrawImageOptions{}
+			x := i*tileSize + (i+1)*tileMargin
+			y := j*tileSize + (j+1)*tileMargin
+			op.GeoM.Translate(float64(x), float64(y))
+			r, g, b, a := colorToScale(tileBackgroundColor)
+			op.ColorM.Scale(r, g, b, a)
+			boardImage.DrawImage(tileImage, op)
+
+			player := bb.GetXY(i, j)
+			if player != bb.empty {
+				bound, _ := font.BoundString(f, player.Symbol())
+				w := (bound.Max.X - bound.Min.X).Ceil()
+				h := (bound.Max.Y - bound.Min.Y).Ceil()
+				x = x + (tileSize-w)/2
+				y = y + (tileSize-h)/2 + h
+				text.Draw(boardImage, player.Symbol(), f, x, y, tileColor)
+			}
+
+		}
+	}
+	// nonAnimatingTiles := map[*Tile]struct{}{}
+	// for t := range nonAnimatingTiles {
+	// 	t.Draw(boardImage)
+	// }
 }
