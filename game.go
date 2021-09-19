@@ -1,8 +1,7 @@
-package main
+package xxo
 
 import (
 	"image/color"
-	"log"
 	"math/rand"
 	"time"
 
@@ -25,6 +24,15 @@ var (
 	tileBackgroundColor = color.RGBA{0xee, 0xe4, 0xda, 0xff}
 	tileColor           = color.RGBA{0x77, 0x6e, 0x65, 0xff}
 )
+
+func NewGame(input *Input, board *Board) *Game {
+	g := Game{
+		input: input,
+		board: board,
+	}
+	g.player = g.board.player1
+	return &g
+}
 
 type Game struct {
 	input      *Input
@@ -146,20 +154,4 @@ func (g *Game) minimax(player *Player, sol *Solutions) int {
 
 type Solutions struct {
 	moves []int
-}
-
-func main() {
-	g := &Game{
-		board: NewBoard(),
-		input: NewInput(),
-	}
-	g.player = g.board.player1
-
-	ebiten.SetWindowSize(ScreenWidth, ScreenHeight)
-	ebiten.SetWindowTitle("XXO")
-
-	if err := ebiten.RunGame(g); err != nil {
-		log.Println(err)
-	}
-
 }

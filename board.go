@@ -1,4 +1,4 @@
-package main
+package xxo
 
 import (
 	"fmt"
@@ -41,6 +41,10 @@ func init() {
 	if err != nil {
 		fmt.Errorf("font face: %w", err)
 	}
+}
+
+type Pos struct {
+	X, Y int
 }
 
 type Board struct {
@@ -115,9 +119,6 @@ func (b *Board) Remaining() int {
 	}
 	return count
 }
-
-// TODO
-func (b *Board) Rating() {}
 
 func (b *Board) byCoord(xy string) int {
 	x := int(xy[0] - 'a')

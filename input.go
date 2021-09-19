@@ -1,4 +1,4 @@
-package main
+package xxo
 
 import "github.com/hajimehoshi/ebiten/v2"
 

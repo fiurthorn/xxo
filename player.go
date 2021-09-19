@@ -1,4 +1,4 @@
-package main
+package xxo
 
 type Player struct {
 	symbol string
