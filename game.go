@@ -61,11 +61,32 @@ func (g *Game) Input(i *Input) error {
 		i.isReleased = false
 
 		sw, sh := ebiten.WindowSize()
+		if sw == 0 || sh == 0 {
+			sw = ScreenWidth
+			sh = ScreenHeight
+		}
 		bw, bh := g.board.Size()
 		x := (sw - bw) / 2
 		y := (sh - bh) / 2
 
+		// log.Printf("sw(%d), sh(%d)", sw, sh)
+		// log.Printf("bw(%d), bh(%d)", bw, bh)
+
+		// log.Printf("x(%d) := (sw - bw) / 2", x)
+		// log.Printf("y(%d) := (sh - bh) / 2", y)
+
 		i, j := (-1*(x-i.x))/tileSize, (-1*(y-i.y))/tileSize
+
+		// log.Printf("i(%d) %d", i, tileSize)
+		// log.Printf("j(%d) %d", j, tileSize)
+
+		if i < 0 || j < 0 || i >= 3 || j >= 3 {
+			return nil
+		}
+		if (g.board.Won() || g.board.Remaining() == 0) && i == j && i == 1 {
+			g.input.reset = true
+			return nil
+		}
 		if g.board.IsEmptyXY(i, j) {
 			g.board.SetXY(i, j, g.player)
 
@@ -98,6 +119,8 @@ func (g *Game) Draw(screen *ebiten.Image) {
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
+	// log.Printf("outsideWidth:%d, outsideHeight:%d", outsideWidth, outsideHeight)
+	// log.Printf("ScreenWidth:%d, ScreenHeight:%d", ScreenWidth, ScreenHeight)
 	return ScreenWidth, ScreenHeight
 }
 
