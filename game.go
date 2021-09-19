@@ -158,46 +158,8 @@ func main() {
 	ebiten.SetWindowSize(ScreenWidth, ScreenHeight)
 	ebiten.SetWindowTitle("XXO")
 
-	// go func() {
-	// 	player := g.board.player1
-	// 	for g.board.Remaining() > 0 {
-	// 		if g.board.Won() {
-	// 			break
-	// 		}
-	// 		move := g.BestMove(player)
-	// 		g.board.Set(move, player)
-	// 		player = g.opposite(player)
-	// 	}
-	// }()
-
 	if err := ebiten.RunGame(g); err != nil {
 		log.Println(err)
 	}
 
-}
-
-func NewInput() *Input {
-	return &Input{}
-}
-
-type Input struct {
-	reset      bool
-	isPressed  bool
-	isReleased bool
-	x, y       int
-}
-
-func (i *Input) Update() {
-	if !ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft) && i.isPressed {
-		i.isPressed = false
-		i.x, i.y = ebiten.CursorPosition()
-		i.isReleased = true
-	}
-	if ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft) {
-		i.isPressed = true
-	}
-
-	if ebiten.IsKeyPressed(ebiten.KeyR) {
-		i.reset = true
-	}
 }

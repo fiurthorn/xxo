@@ -240,7 +240,6 @@ func (bb *Board) Draw(boardImage *ebiten.Image) {
 	boardImage.Fill(frameColor)
 	for j := 0; j < size; j++ {
 		for i := 0; i < size; i++ {
-			// v := 0
 			op := &ebiten.DrawImageOptions{}
 			x := i*tileSize + (i+1)*tileMargin
 			y := j*tileSize + (j+1)*tileMargin
@@ -261,8 +260,4 @@ func (bb *Board) Draw(boardImage *ebiten.Image) {
 
 		}
 	}
-	// nonAnimatingTiles := map[*Tile]struct{}{}
-	// for t := range nonAnimatingTiles {
-	// 	t.Draw(boardImage)
-	// }
 }
