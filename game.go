@@ -69,16 +69,11 @@ func (g *Game) Input(i *Input) error {
 		x := (sw - bw) / 2
 		y := (sh - bh) / 2
 
-		// log.Printf("sw(%d), sh(%d)", sw, sh)
-		// log.Printf("bw(%d), bh(%d)", bw, bh)
-
-		// log.Printf("x(%d) := (sw - bw) / 2", x)
-		// log.Printf("y(%d) := (sh - bh) / 2", y)
-
-		i, j := (-1*(x-i.x))/tileSize, (-1*(y-i.y))/tileSize
-
-		// log.Printf("i(%d) %d", i, tileSize)
-		// log.Printf("j(%d) %d", j, tileSize)
+		i, j := -1*(x-i.x), -1*(y-i.y)
+		if i < 0 || j < 0 || i > bw || j > bh {
+			return nil
+		}
+		i, j = i/tileSize, j/tileSize
 
 		if i < 0 || j < 0 || i >= 3 || j >= 3 {
 			return nil
