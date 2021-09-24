@@ -3,6 +3,8 @@ package fiurthorn.view.xxo;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.os.Bundle;
+import android.view.Window;
+import android.view.WindowManager;
 
 import go.Seq;
 import fiurthorn.xxo.mobile.EbitenView;

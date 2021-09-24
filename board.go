@@ -52,12 +52,13 @@ type Board struct {
 	player1 *Player
 	player2 *Player
 
-	fields [size * size]*Player
+	fields     [size * size]*Player
+	boardImage *ebiten.Image
 }
 
 func NewBoard() *Board {
 	empty := EmptyPlayer()
-	return &Board{
+	b := Board{
 		empty:   empty,
 		player1: PlayerX(),
 		player2: PlayerO(),
@@ -67,6 +68,8 @@ func NewBoard() *Board {
 			empty, empty, empty,
 		},
 	}
+	b.boardImage = ebiten.NewImage(b.Size())
+	return &b
 }
 
 func (b *Board) Size() (int, int) {
@@ -237,8 +240,8 @@ func colorToScale(clr color.Color) (float64, float64, float64, float64) {
 	return rf, gf, bf, af
 }
 
-func (bb *Board) Draw(boardImage *ebiten.Image) {
-	boardImage.Fill(frameColor)
+func (bb *Board) Draw() {
+	bb.boardImage.Fill(frameColor)
 	for j := 0; j < size; j++ {
 		for i := 0; i < size; i++ {
 			op := &ebiten.DrawImageOptions{}
@@ -247,7 +250,7 @@ func (bb *Board) Draw(boardImage *ebiten.Image) {
 			op.GeoM.Translate(float64(x), float64(y))
 			r, g, b, a := colorToScale(tileBackgroundColor)
 			op.ColorM.Scale(r, g, b, a)
-			boardImage.DrawImage(tileImage, op)
+			bb.boardImage.DrawImage(tileImage, op)
 
 			player := bb.GetXY(i, j)
 			if player != bb.empty {
@@ -256,9 +259,8 @@ func (bb *Board) Draw(boardImage *ebiten.Image) {
 				h := (bound.Max.Y - bound.Min.Y).Ceil()
 				x = x + (tileSize-w)/2
 				y = y + (tileSize-h)/2 + h
-				text.Draw(boardImage, player.Symbol(), f, x, y, tileColor)
+				text.Draw(bb.boardImage, player.Symbol(), f, x, y, tileColor)
 			}
-
 		}
 	}
 }

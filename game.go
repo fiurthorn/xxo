@@ -6,21 +6,23 @@ import (
 	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/text"
+	"golang.org/x/image/font"
 )
 
 func init() {
 	rand.Seed(time.Now().UnixNano())
 }
 
-const (
+var (
 	ScreenWidth  = 420
 	ScreenHeight = 600
-	boardSize    = 4
 )
 
 var (
 	backgroundColor     = color.RGBA{0xfa, 0xf8, 0xef, 0xff}
 	frameColor          = color.RGBA{0xbb, 0xad, 0xa0, 0xff}
+	activeColor         = color.RGBA{0x00, 0x77, 0xaa, 0xff}
 	tileBackgroundColor = color.RGBA{0xee, 0xe4, 0xda, 0xff}
 	tileColor           = color.RGBA{0x77, 0x6e, 0x65, 0xff}
 )
@@ -35,9 +37,8 @@ func NewGame(input *Input, board *Board) *Game {
 }
 
 type Game struct {
-	input      *Input
-	board      *Board
-	boardImage *ebiten.Image
+	input *Input
+	board *Board
 
 	player *Player
 }
@@ -50,15 +51,15 @@ func (g *Game) Update() error {
 	return nil
 }
 
-func (g *Game) Input(i *Input) error {
-	if i.reset {
-		i.reset = false
+func (g *Game) Input(inp *Input) error {
+	if inp.reset {
+		inp.reset = false
 		for i := range g.board.fields {
 			g.board.fields[i] = g.board.empty
 		}
 	}
-	if i.isReleased {
-		i.isReleased = false
+	if inp.isReleased {
+		inp.isReleased = false
 
 		sw, sh := ebiten.WindowSize()
 		if sw == 0 || sh == 0 {
@@ -69,7 +70,18 @@ func (g *Game) Input(i *Input) error {
 		x := (sw - bw) / 2
 		y := (sh - bh) / 2
 
-		i, j := -1*(x-i.x), -1*(y-i.y)
+		{
+			bw, bh := g.board.boardImage.Size()
+			x1, y1 := (sw-bw)/2, (sh-bh)/2+bh+10
+			x2, y2 := x1+bw, y1+tileSize/2
+
+			if g.board.Won() || g.board.Remaining() == 0 && inp.x > x1 && inp.x < x2 && inp.y > y1 && inp.y < y2 {
+				g.input.reset = true
+				return nil
+			}
+		}
+
+		i, j := -1*(x-inp.x), -1*(y-inp.y)
 		if i < 0 || j < 0 || i > bw || j > bh {
 			return nil
 		}
@@ -77,12 +89,7 @@ func (g *Game) Input(i *Input) error {
 
 		if i < 0 || j < 0 || i >= 3 || j >= 3 {
 			return nil
-		}
-		if (g.board.Won() || g.board.Remaining() == 0) && i == j && i == 1 {
-			g.input.reset = true
-			return nil
-		}
-		if g.board.IsEmptyXY(i, j) {
+		} else if g.board.IsEmptyXY(i, j) {
 			g.board.SetXY(i, j, g.player)
 
 			if g.board.Remaining() > 0 && !g.board.Won() {
@@ -97,26 +104,56 @@ func (g *Game) Input(i *Input) error {
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
-	if g.boardImage == nil {
-		w, h := g.board.Size()
-		g.boardImage = ebiten.NewImage(w, h)
-	}
 	screen.Fill(backgroundColor)
-	g.board.Draw(g.boardImage)
-	op := &ebiten.DrawImageOptions{}
-	sw, sh := screen.Size()
-	bw, bh := g.boardImage.Size()
-	x := (sw - bw) / 2
-	y := (sh - bh) / 2
 
+	g.board.Draw()
+	g.DrawBoard(screen)
+	g.DrawNewGameButton(screen)
+}
+
+func (g *Game) DrawNewGameButton(screen *ebiten.Image) {
+	sw, sh := screen.Size()
+	bw, bh := g.board.boardImage.Size()
+	x, y := (sw-bw)/2, (sh-bh)/2+bh+10
+
+	button := ebiten.NewImage(bw, tileSize/2)
+	txt := "New Game"
+	bound, _ := font.BoundString(f, txt)
+	w := (bound.Max.X - bound.Min.X).Ceil()
+	h := (bound.Max.Y - bound.Min.Y).Ceil()
+	xT := (bw - w) / 2
+	yT := ((tileSize / 2) - h/2 + 3)
+
+	if g.board.Won() || g.board.Remaining() == 0 {
+		button.Fill(activeColor)
+		text.Draw(button, txt, f, xT, yT, tileBackgroundColor)
+	} else {
+		button.Fill(frameColor)
+		text.Draw(button, txt, f, xT, yT, tileColor)
+	}
+
+	op := &ebiten.DrawImageOptions{}
 	op.GeoM.Translate(float64(x), float64(y))
-	screen.DrawImage(g.boardImage, op)
+	screen.DrawImage(button, op)
+}
+
+func (g *Game) DrawBoard(screen *ebiten.Image) {
+	sw, sh := screen.Size()
+	bw, bh := g.board.boardImage.Size()
+	x, y := (sw-bw)/2, (sh-bh)/2
+
+	op := &ebiten.DrawImageOptions{}
+	op.GeoM.Translate(float64(x), float64(y))
+	screen.DrawImage(g.board.boardImage, op)
+
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
-	// log.Printf("outsideWidth:%d, outsideHeight:%d", outsideWidth, outsideHeight)
-	// log.Printf("ScreenWidth:%d, ScreenHeight:%d", ScreenWidth, ScreenHeight)
-	return ScreenWidth, ScreenHeight
+	if outsideWidth != ScreenWidth || outsideHeight != ScreenHeight {
+		ScreenWidth = outsideWidth
+		ScreenHeight = outsideHeight
+	}
+	return outsideWidth, outsideHeight
 }
 
 func (g *Game) rating(player *Player) int {
