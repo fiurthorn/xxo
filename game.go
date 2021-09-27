@@ -2,6 +2,7 @@ package xxo
 
 import (
 	"image/color"
+	"log"
 	"math/rand"
 	"time"
 
@@ -193,6 +194,9 @@ func (g *Game) minimax(player *Player, sol *Solutions) int {
 			g.board.Set(i, player)
 			score := -g.minimax(g.opposite(player), nil)
 			g.board.Reset(i)
+			if sol != nil {
+				log.Printf("index %d: score %d", i, score)
+			}
 			if score > bestScore {
 				if sol != nil {
 					sol.moves = []int{}
