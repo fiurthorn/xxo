@@ -30,7 +30,7 @@ func init() {
 	tileImage.Fill(color.White)
 	goreg, err := opentype.Parse(goregular.TTF)
 	if err != nil {
-		fmt.Errorf("goregular: %w", err)
+		fmt.Printf("go regular: %v", err)
 	}
 
 	f, err = opentype.NewFace(goreg, &opentype.FaceOptions{
@@ -39,7 +39,7 @@ func init() {
 		Hinting: font.HintingFull,
 	})
 	if err != nil {
-		fmt.Errorf("font face: %w", err)
+		fmt.Printf("font face: %v", err)
 	}
 }
 
@@ -217,7 +217,7 @@ func (b *Board) String() string {
 ---+---+---+---
  1 | %s | %s | %s
 ---+---+---+---
-   | a | b | c 
+   | a | b | c
  `,
 		b.fields[6], b.fields[7], b.fields[8],
 		b.fields[3], b.fields[4], b.fields[5],
