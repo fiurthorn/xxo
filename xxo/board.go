@@ -2,15 +2,7 @@ package xxo
 
 import (
 	"fmt"
-	"image/color"
 	"log"
-
-	"golang.org/x/image/font"
-	"golang.org/x/image/font/gofont/goregular"
-	"golang.org/x/image/font/opentype"
-
-	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/text"
 )
 
 const (
@@ -18,30 +10,6 @@ const (
 	tileSize   = 80
 	tileMargin = 4
 )
-
-var (
-	tileImage = ebiten.NewImage(tileSize, tileSize)
-	f         font.Face
-)
-
-func init() {
-	var err error
-
-	tileImage.Fill(color.White)
-	goreg, err := opentype.Parse(goregular.TTF)
-	if err != nil {
-		fmt.Printf("go regular: %v", err)
-	}
-
-	f, err = opentype.NewFace(goreg, &opentype.FaceOptions{
-		Size:    32,
-		DPI:     72,
-		Hinting: font.HintingFull,
-	})
-	if err != nil {
-		fmt.Printf("font face: %v", err)
-	}
-}
 
 type Pos struct {
 	X, Y int
@@ -52,8 +20,7 @@ type Board struct {
 	player1 *Player
 	player2 *Player
 
-	fields     [size * size]*Player
-	boardImage *ebiten.Image
+	fields [size * size]*Player
 }
 
 func NewBoard() *Board {
@@ -68,7 +35,6 @@ func NewBoard() *Board {
 			empty, empty, empty,
 		},
 	}
-	b.boardImage = ebiten.NewImage(b.Size())
 	return &b
 }
 
@@ -223,44 +189,4 @@ func (b *Board) String() string {
 		b.fields[3], b.fields[4], b.fields[5],
 		b.fields[0], b.fields[1], b.fields[2],
 	)
-}
-
-func colorToScale(clr color.Color) (float64, float64, float64, float64) {
-	r, g, b, a := clr.RGBA()
-	rf := float64(r) / 0xffff
-	gf := float64(g) / 0xffff
-	bf := float64(b) / 0xffff
-	af := float64(a) / 0xffff
-	// Convert to non-premultiplied alpha components.
-	if 0 < af {
-		rf /= af
-		gf /= af
-		bf /= af
-	}
-	return rf, gf, bf, af
-}
-
-func (bb *Board) Draw() {
-	bb.boardImage.Fill(frameColor)
-	for j := 0; j < size; j++ {
-		for i := 0; i < size; i++ {
-			op := &ebiten.DrawImageOptions{}
-			x := i*tileSize + (i+1)*tileMargin
-			y := j*tileSize + (j+1)*tileMargin
-			op.GeoM.Translate(float64(x), float64(y))
-			r, g, b, a := colorToScale(tileBackgroundColor)
-			op.ColorM.Scale(r, g, b, a)
-			bb.boardImage.DrawImage(tileImage, op)
-
-			player := bb.GetXY(i, j)
-			if player != bb.empty {
-				bound, _ := font.BoundString(f, player.Symbol())
-				w := (bound.Max.X - bound.Min.X).Ceil()
-				h := (bound.Max.Y - bound.Min.Y).Ceil()
-				x = x + (tileSize-w)/2
-				y = y + (tileSize-h)/2 + h
-				text.Draw(bb.boardImage, player.Symbol(), f, x, y, tileColor)
-			}
-		}
-	}
 }
