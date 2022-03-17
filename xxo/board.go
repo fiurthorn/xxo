@@ -6,9 +6,8 @@ import (
 )
 
 const (
-	size       = 3
-	tileSize   = 80
-	tileMargin = 4
+	side = 3
+	size = side * side
 )
 
 type Pos struct {
@@ -21,7 +20,7 @@ type Board struct {
 	player2 *Player
 	current *Player
 
-	fields [size * size]*Player
+	fields [size]*Player
 }
 
 func NewBoard() *Board {
@@ -30,7 +29,7 @@ func NewBoard() *Board {
 		empty:   empty,
 		player1: PlayerX(),
 		player2: PlayerO(),
-		fields: [size * size]*Player{
+		fields: [size]*Player{
 			empty, empty, empty,
 			empty, empty, empty,
 			empty, empty, empty,
@@ -40,18 +39,12 @@ func NewBoard() *Board {
 	return &b
 }
 
-func (b *Board) Size() (int, int) {
-	x := size*tileSize + (size+1)*tileMargin
-	y := x
-	return x, y
-}
-
-func (b *Board) inALine(p [3]Pos) bool {
+func (b *Board) inALine(p [side]Pos) bool {
 	K, L, M := b.GetPos(p[0]), b.GetPos(p[1]), b.GetPos(p[2])
 	return K == L && L == M && M != b.empty
 }
 
-var lines = [8][3]Pos{
+var lines = [8][side]Pos{
 	{{0, 0}, {1, 1}, {2, 2}},
 	{{2, 0}, {1, 1}, {0, 2}},
 
@@ -64,13 +57,13 @@ var lines = [8][3]Pos{
 	{{2, 0}, {2, 1}, {2, 2}},
 }
 
-func (b *Board) Winning() ([3]Pos, bool) {
+func (b *Board) Winning() ([side]Pos, bool) {
 	for _, p := range lines {
 		if b.inALine(p) {
 			return p, true
 		}
 	}
-	return [3]Pos{}, false
+	return [side]Pos{}, false
 }
 
 func (b *Board) Winner() *Player {
@@ -86,29 +79,23 @@ func (b *Board) Won() bool {
 }
 
 func (b *Board) Stopped() bool {
-	return b.Remaining() == 0 || !b.Won()
+	return b.Remaining() == 0 || b.Won()
 }
 
-func (b *Board) Remaining() int {
-	count := 0
+func (b *Board) Remaining() (count int) {
+	if b.Won() {
+		return
+	}
+
 	for _, e := range b.fields {
 		if e == b.empty {
 			count++
 		}
 	}
-	return count
+	return
 }
 
-func (b *Board) byCoord(xy string) int {
-	x := int(xy[0] - 'a')
-	y := int(xy[1] - '1')
-	if x < 0 || y < 0 || x > 2 || y > 2 {
-		panic(fmt.Sprintf("pos out of range: %#v", xy))
-	}
-	return b.byXY(x, y)
-}
-
-func (b *Board) Contains(line [3]Pos, i int) bool {
+func (b *Board) Contains(line [side]Pos, i int) bool {
 	for _, idx := range line {
 		if i == b.byPos(idx) {
 			return true
@@ -119,24 +106,17 @@ func (b *Board) Contains(line [3]Pos, i int) bool {
 }
 
 func (b *Board) byPos(p Pos) int {
-	if p.X < 0 || p.Y < 0 || p.X > 2 || p.Y > 2 {
+	if p.X < 0 || p.Y < 0 || p.X >= side || p.Y >= side {
 		panic(fmt.Sprintf("pos out of range: %#v", p))
 	}
-	return b.byXY(p.Y, p.X)
+	return p.Y*side + p.X
 }
 
 func (b *Board) byIndex(index int) int {
-	if index < 0 || index > 8 {
+	if index < 0 || index >= size {
 		panic(fmt.Sprintf("index out of range %+v", index))
 	}
 	return index
-}
-
-func (b *Board) byXY(x, y int) int {
-	if x < 0 || y < 0 || x > 2 || y > 2 {
-		panic(fmt.Sprintf("pos out of range: %#v, %#v", x, y))
-	}
-	return y*3 + x
 }
 
 func (b *Board) IsEmpty(index int) bool {
@@ -147,28 +127,12 @@ func (b *Board) IsEmptyPos(p Pos) bool {
 	return b.IsEmpty(b.byPos(p))
 }
 
-func (b *Board) IsEmptyXY(x, y int) bool {
-	return b.IsEmpty(b.byXY(x, y))
-}
-
-func (b *Board) IsEmptyCoord(xy string) bool {
-	return b.IsEmpty(b.byCoord(xy))
-}
-
 func (b *Board) Get(index int) *Player {
 	return b.fields[b.byIndex(index)]
 }
 
-func (b *Board) GetXY(x, y int) *Player {
-	return b.Get(b.byXY(x, y))
-}
-
 func (b *Board) GetPos(p Pos) *Player {
 	return b.Get(b.byPos(p))
-}
-
-func (b *Board) GetCoord(xy string) *Player {
-	return b.Get(b.byCoord(xy))
 }
 
 func (b *Board) GetPlayerX() string {
@@ -196,7 +160,7 @@ func (b *Board) Reset(index int) {
 }
 
 func (b *Board) ResetBoard() {
-	for i := 0; i < size*size; i++ {
+	for i := 0; i < size; i++ {
 		b.fields[b.byIndex(i)] = b.empty
 	}
 }
@@ -212,14 +176,6 @@ func (b *Board) Set(index int, player *Player) {
 
 func (b *Board) SetPos(p Pos, player *Player) {
 	b.Set(b.byPos(p), player)
-}
-
-func (b *Board) SetXY(x, y int, player *Player) {
-	b.Set(b.byXY(x, y), player)
-}
-
-func (b *Board) SetCoord(xy string, player *Player) {
-	b.Set(b.byCoord(xy), player)
 }
 
 func (b *Board) String() string {

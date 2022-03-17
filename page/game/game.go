@@ -73,7 +73,7 @@ func (p *Page) NavItem() component.NavItem {
 
 func (p *Page) Layout(gtx C) D {
 	if p.newGameBtn.Clicked() {
-		p.game.Board.ResetBoard()
+		p.game.ResetBoard()
 	}
 
 	return layout.Center.Layout(
@@ -84,19 +84,18 @@ func (p *Page) Layout(gtx C) D {
 
 func (p *Page) fill(gtx C) D {
 	space := unit.Dp(8)
-	line, ok := p.game.Board.Winning()
+	line, ok := p.game.Winning()
+	ended := p.game.Stopped()
 
 	return p.grid.Layout(gtx, 9, func(gtx layout.Context, i int) D {
-		if p.cells[i].Clicked() && p.game.Board.IsEmpty(i) {
-			p.game.Board.Set(i, p.game.Board.GetCurrent())
+		if p.cells[i].Clicked() && p.game.IsEmpty(i) {
+			p.game.Set(i, p.game.GetCurrent())
 
-			// if p.game.Board.Stopped() {
-			go func() {
-				idx := p.game.BestMove(p.game.Board.GetCurrent())
-				p.game.Board.Set(idx, p.game.Board.GetCurrent())
-				// gtx.Ops.InvalidateOp()
-			}()
-			// }
+			if !p.game.Stopped() {
+				curr := p.game.GetCurrent()
+				idx := p.game.BestMove(curr)
+				p.game.Set(idx, curr)
+			}
 		}
 
 		size := lib.Max(
@@ -105,24 +104,30 @@ func (p *Page) fill(gtx C) D {
 		)
 		size = size / 7
 
-		highlight := ok && p.game.Board.Contains(line, i)
+		highlight := ok && p.game.Contains(line, i)
+
 		return layout.
 			Inset{Top: space, Bottom: space, Left: space, Right: space}.
-			Layout(gtx, p.button(gtx, i, size, highlight))
+			Layout(gtx, p.button(gtx, i, size, highlight, ended))
 	})
 }
 
-func (p *Page) button(gtx C, idx int, size int, highlight bool) func(gtx C) D {
+func (p *Page) button(gtx C, idx int, size int, highlight, ended bool) func(gtx C) D {
 	return func(gtx C) D {
 		gtx.Constraints = layout.Exact(image.Point{X: size, Y: size})
 
 		clickable := p.cells[idx]
-		player := p.game.Board.Get(idx).Symbol()
+		player := p.game.Get(idx)
 
 		btn := material.Button(p.Theme, clickable, player)
+		btn.CornerRadius.U = unit.UnitPx
+		btn.CornerRadius.V = float32(size / 2)
+		btn.TextSize.U = unit.UnitPx
 		btn.TextSize.V = float32(size / 2)
 		if highlight {
 			btn.Background = color.NRGBA{A: 0xff, R: 255, G: 64, B: 64}
+		} else if ended {
+			btn.Background = color.NRGBA{A: 0xff, R: 64, G: 64, B: 64}
 		}
 
 		d := btn.Layout(gtx)

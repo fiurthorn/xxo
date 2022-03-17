@@ -11,17 +11,61 @@ func init() {
 }
 
 func NewGame() *Game {
-	return &Game{NewBoard()}
+	return &Game{
+		board: NewBoard(),
+	}
 }
 
 type Game struct {
-	Board *Board
+	board *Board
+
+	fields [size]string
+}
+
+func (g *Game) ResetBoard() {
+	g.board.ResetBoard()
+	g.update()
+}
+
+func (g *Game) Winning() ([3]Pos, bool) {
+	return g.board.Winning()
+}
+
+func (g *Game) Stopped() bool {
+	return g.board.Stopped()
+}
+
+func (g *Game) IsEmpty(i int) bool {
+	return g.board.IsEmpty(i)
+}
+
+func (g *Game) Get(i int) string {
+	return g.fields[i]
+}
+
+func (g *Game) GetCurrent() *Player {
+	return g.board.GetCurrent()
+}
+
+func (g *Game) Contains(pos [3]Pos, i int) bool {
+	return g.board.Contains(pos, i)
+}
+
+func (g *Game) Set(i int, p *Player) {
+	g.board.Set(i, p)
+	g.update()
+}
+
+func (g *Game) update() {
+	for i := 0; i < size; i++ {
+		g.fields[i] = g.board.fields[i].Symbol()
+	}
 }
 
 func (g *Game) rating(player *Player) int {
-	if g.Board.Won() {
-		factor := 1 + g.Board.Remaining()
-		if player == g.Board.Winner() {
+	if g.board.Won() {
+		factor := 1 + g.board.Remaining()
+		if player == g.board.Winner() {
 			return 10 * factor
 		}
 		return -10 * factor
@@ -30,10 +74,10 @@ func (g *Game) rating(player *Player) int {
 }
 
 func (g *Game) opposite(player *Player) *Player {
-	if player == g.Board.player1 {
-		return g.Board.player2
+	if player == g.board.player1 {
+		return g.board.player2
 	}
-	return g.Board.player1
+	return g.board.player1
 }
 
 //
@@ -50,16 +94,16 @@ func (g *Game) BestMove(player *Player) int {
 }
 
 func (g *Game) minimax(player *Player, sol *Solutions) int {
-	if g.Board.Won() || g.Board.Remaining() == 0 {
+	if g.board.Won() || g.board.Remaining() == 0 {
 		return g.rating(player)
 	}
 
 	bestScore := -1000
 	for i := 0; i < 9; i++ {
-		if g.Board.IsEmpty(i) {
-			g.Board.Set(i, player)
+		if g.board.IsEmpty(i) {
+			g.board.Set(i, player)
 			score := -g.minimax(g.opposite(player), nil)
-			g.Board.Reset(i)
+			g.board.Reset(i)
 			if sol != nil {
 				log.Printf("index %d: score %d", i, score)
 			}
