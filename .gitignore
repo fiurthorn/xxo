@@ -2,5 +2,4 @@ vendor/
 __debug_bin*
 build/
 
-*.aar
-*.apk
+__debug_bin

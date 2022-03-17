@@ -19,6 +19,7 @@ type Board struct {
 	empty   *Player
 	player1 *Player
 	player2 *Player
+	current *Player
 
 	fields [size * size]*Player
 }
@@ -35,6 +36,7 @@ func NewBoard() *Board {
 			empty, empty, empty,
 		},
 	}
+	b.current = b.player1
 	return &b
 }
 
@@ -44,29 +46,37 @@ func (b *Board) Size() (int, int) {
 	return x, y
 }
 
-func (b *Board) inALine(k, l, m Pos) bool {
-	K, L, M := b.GetPos(k), b.GetPos(l), b.GetPos(m)
+func (b *Board) inALine(p [3]Pos) bool {
+	K, L, M := b.GetPos(p[0]), b.GetPos(p[1]), b.GetPos(p[2])
 	return K == L && L == M && M != b.empty
 }
 
+var lines = [8][3]Pos{
+	{{0, 0}, {1, 1}, {2, 2}},
+	{{2, 0}, {1, 1}, {0, 2}},
+
+	{{0, 0}, {1, 0}, {2, 0}},
+	{{0, 1}, {1, 1}, {2, 1}},
+	{{0, 2}, {1, 2}, {2, 2}},
+
+	{{0, 0}, {0, 1}, {0, 2}},
+	{{1, 0}, {1, 1}, {1, 2}},
+	{{2, 0}, {2, 1}, {2, 2}},
+}
+
+func (b *Board) Winning() ([3]Pos, bool) {
+	for _, p := range lines {
+		if b.inALine(p) {
+			return p, true
+		}
+	}
+	return [3]Pos{}, false
+}
+
 func (b *Board) Winner() *Player {
-	if b.inALine(Pos{0, 0}, Pos{1, 1}, Pos{2, 2}) {
-		return b.GetXY(1, 1)
+	if line, ok := b.Winning(); ok {
+		return b.GetPos(line[0])
 	}
-
-	if b.inALine(Pos{2, 0}, Pos{1, 1}, Pos{0, 2}) {
-		return b.GetXY(1, 1)
-	}
-
-	for i := 0; i < 3; i++ {
-		if b.inALine(Pos{0, i}, Pos{1, i}, Pos{2, i}) {
-			return b.GetXY(i, i)
-		}
-		if b.inALine(Pos{i, 0}, Pos{i, 1}, Pos{i, 2}) {
-			return b.GetXY(i, i)
-		}
-	}
-
 	return b.empty
 }
 
@@ -96,6 +106,16 @@ func (b *Board) byCoord(xy string) int {
 		panic(fmt.Sprintf("pos out of range: %#v", xy))
 	}
 	return b.byXY(x, y)
+}
+
+func (b *Board) Contains(line [3]Pos, i int) bool {
+	for _, idx := range line {
+		if i == b.byPos(idx) {
+			return true
+		}
+	}
+
+	return false
 }
 
 func (b *Board) byPos(p Pos) int {
@@ -151,8 +171,34 @@ func (b *Board) GetCoord(xy string) *Player {
 	return b.Get(b.byCoord(xy))
 }
 
+func (b *Board) GetPlayerX() string {
+	return b.player1.symbol
+}
+
+func (b *Board) GetPlayerO() string {
+	return b.player2.symbol
+}
+
+func (b *Board) GetCurrent() *Player {
+	return b.current
+}
+
+func (b *Board) toggle() {
+	if b.current == b.player1 {
+		b.current = b.player2
+		return
+	}
+	b.current = b.player1
+}
+
 func (b *Board) Reset(index int) {
 	b.fields[b.byIndex(index)] = b.empty
+}
+
+func (b *Board) ResetBoard() {
+	for i := 0; i < size*size; i++ {
+		b.fields[b.byIndex(i)] = b.empty
+	}
 }
 
 func (b *Board) Set(index int, player *Player) {
@@ -161,6 +207,7 @@ func (b *Board) Set(index int, player *Player) {
 		return
 	}
 	b.fields[b.byIndex(index)] = player
+	b.toggle()
 }
 
 func (b *Board) SetPos(p Pos, player *Player) {

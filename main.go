@@ -12,16 +12,18 @@ import (
 	"gioui.org/op"
 	"gioui.org/unit"
 	"gioui.org/widget/material"
-
 	"github.com/fiurthorn/xxo/page"
-	"github.com/fiurthorn/xxo/page/appbar"
+	"github.com/fiurthorn/xxo/page/game"
+	"github.com/fiurthorn/xxo/page/settings"
 )
 
-func init() {
-	flag.Parse()
-}
+type (
+	C = layout.Context
+	D = layout.Dimensions
+)
 
 func main() {
+	flag.Parse()
 	go func() {
 		w := app.NewWindow()
 		if err := loop(w); err != nil {
@@ -38,7 +40,8 @@ func loop(w *app.Window) error {
 	var ops op.Ops
 
 	router := page.NewRouter(th)
-	router.Register(0, appbar.New(&router))
+	router.Register(0, game.New(&router))
+	router.Register(1, settings.New(&router))
 
 	for {
 		select {
@@ -56,7 +59,7 @@ func loop(w *app.Window) error {
 				}
 			case app.ConfigEvent:
 				{
-					log.Println(e.Config.Size.X, e.Config.Size.Y)
+					// log.Println(e.Config.Size.X, e.Config.Size.Y)
 				}
 			}
 		}

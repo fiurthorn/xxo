@@ -12,7 +12,7 @@ import (
 )
 
 type Router struct {
-	th             *material.Theme
+	Theme          *material.Theme
 	pages          map[interface{}]Page
 	current        interface{}
 	NavAnim        component.VisibilityAnimation
@@ -27,7 +27,7 @@ type Router struct {
 func NewRouter(th *material.Theme) Router {
 	modal := component.NewModal()
 
-	nav := component.NewNav("Navigation Drawer", "This is an example.")
+	nav := component.NewNav("XXO", "tic-tac-toe")
 	modalNav := component.ModalNavFrom(&nav, modal)
 
 	bar := component.NewAppBar(modal)
@@ -39,7 +39,7 @@ func NewRouter(th *material.Theme) Router {
 	}
 	return Router{
 		pages:          map[interface{}]Page{},
-		th:             th,
+		Theme:          th,
 		ModalLayer:     modal,
 		ModalNavDrawer: modalNav,
 		AppBar:         bar,
@@ -92,7 +92,7 @@ func (r *Router) Layout(gtx layout.Context) layout.Dimensions {
 		r.SwitchTo(r.ModalNavDrawer.CurrentNavDestination())
 	}
 
-	paint.Fill(gtx.Ops, r.th.Palette.Bg)
+	paint.Fill(gtx.Ops, r.Theme.Palette.Bg)
 
 	content := layout.Flexed(1, func(gtx layout.Context) layout.Dimensions {
 		return layout.Flex{}.Layout(gtx, r.layoutNavigation(), r.layoutPage())
@@ -105,25 +105,25 @@ func (r *Router) Layout(gtx layout.Context) layout.Dimensions {
 	} else {
 		flex.Layout(gtx, bar, content)
 	}
-	r.ModalLayer.Layout(gtx, r.th)
+	r.ModalLayer.Layout(gtx, r.Theme)
 	return layout.Dimensions{Size: gtx.Constraints.Max}
 }
 
 func (r *Router) layoutAppbar() layout.FlexChild {
 	return layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-		return r.AppBar.Layout(gtx, r.th)
+		return r.AppBar.Layout(gtx, r.Theme, "home", "more")
 	})
 }
 
 func (r *Router) layoutNavigation() layout.FlexChild {
 	return layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 		gtx.Constraints.Max.X /= 3
-		return r.NavDrawer.Layout(gtx, r.th, &r.NavAnim)
+		return r.NavDrawer.Layout(gtx, r.Theme, &r.NavAnim)
 	})
 }
 
 func (r *Router) layoutPage() layout.FlexChild {
 	return layout.Flexed(1, func(gtx layout.Context) layout.Dimensions {
-		return r.pages[r.current].Layout(gtx, r.th)
+		return r.pages[r.current].Layout(gtx)
 	})
 }
