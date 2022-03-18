@@ -1,8 +1,8 @@
 package xxo
 
 import (
-	"log"
 	"math/rand"
+	"sync"
 	"time"
 )
 
@@ -13,6 +13,7 @@ func init() {
 func NewGame() *Game {
 	return &Game{
 		board: NewBoard(),
+		m:     &sync.Mutex{},
 	}
 }
 
@@ -20,6 +21,15 @@ type Game struct {
 	board *Board
 
 	fields [size]string
+	m      sync.Locker
+}
+
+func (g *Game) Lock() {
+	g.m.Lock()
+}
+
+func (g *Game) Unlock() {
+	g.m.Unlock()
 }
 
 func (g *Game) ResetBoard() {
@@ -35,16 +45,20 @@ func (g *Game) Stopped() bool {
 	return g.board.Stopped()
 }
 
+func (g *Game) Player1() *Player {
+	return g.board.player1
+}
+
+func (g *Game) Player2() *Player {
+	return g.board.player2
+}
+
 func (g *Game) IsEmpty(i int) bool {
 	return g.board.IsEmpty(i)
 }
 
 func (g *Game) Get(i int) string {
 	return g.fields[i]
-}
-
-func (g *Game) GetCurrent() *Player {
-	return g.board.GetCurrent()
 }
 
 func (g *Game) Contains(pos [3]Pos, i int) bool {
@@ -64,7 +78,7 @@ func (g *Game) update() {
 
 func (g *Game) rating(player *Player) int {
 	if g.board.Won() {
-		factor := 1 + g.board.Remaining()
+		factor := 1 + g.board.Free()
 		if player == g.board.Winner() {
 			return 10 * factor
 		}
@@ -73,7 +87,7 @@ func (g *Game) rating(player *Player) int {
 	return 0
 }
 
-func (g *Game) opposite(player *Player) *Player {
+func (g *Game) Opposite(player *Player) *Player {
 	if player == g.board.player1 {
 		return g.board.player2
 	}
@@ -102,11 +116,8 @@ func (g *Game) minimax(player *Player, sol *Solutions) int {
 	for i := 0; i < 9; i++ {
 		if g.board.IsEmpty(i) {
 			g.board.Set(i, player)
-			score := -g.minimax(g.opposite(player), nil)
+			score := -g.minimax(g.Opposite(player), nil)
 			g.board.Reset(i)
-			if sol != nil {
-				log.Printf("index %d: score %d", i, score)
-			}
 			if score > bestScore {
 				if sol != nil {
 					sol.moves = []int{}

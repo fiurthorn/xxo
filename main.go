@@ -12,6 +12,7 @@ import (
 	"gioui.org/op"
 	"gioui.org/unit"
 	"gioui.org/widget/material"
+	"github.com/fiurthorn/xxo/lib"
 	"github.com/fiurthorn/xxo/page"
 	"github.com/fiurthorn/xxo/page/game"
 	"github.com/fiurthorn/xxo/page/settings"
@@ -37,6 +38,11 @@ func main() {
 func loop(w *app.Window) error {
 	th := material.NewTheme(gofont.Collection())
 	th.TextSize = unit.Sp(14.)
+	th.Bg = lib.Cultured
+	th.Fg = lib.BlueSapphire
+	th.ContrastBg = lib.BlueSapphire
+	th.ContrastFg = lib.Cultured
+
 	var ops op.Ops
 
 	router := page.NewRouter(th)

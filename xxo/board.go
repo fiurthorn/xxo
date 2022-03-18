@@ -2,7 +2,6 @@ package xxo
 
 import (
 	"fmt"
-	"log"
 )
 
 const (
@@ -18,7 +17,6 @@ type Board struct {
 	empty   *Player
 	player1 *Player
 	player2 *Player
-	current *Player
 
 	fields [size]*Player
 }
@@ -35,7 +33,6 @@ func NewBoard() *Board {
 			empty, empty, empty,
 		},
 	}
-	b.current = b.player1
 	return &b
 }
 
@@ -95,6 +92,15 @@ func (b *Board) Remaining() (count int) {
 	return
 }
 
+func (b *Board) Free() (count int) {
+	for _, e := range b.fields {
+		if e == b.empty {
+			count++
+		}
+	}
+	return
+}
+
 func (b *Board) Contains(line [side]Pos, i int) bool {
 	for _, idx := range line {
 		if i == b.byPos(idx) {
@@ -143,18 +149,6 @@ func (b *Board) GetPlayerO() string {
 	return b.player2.symbol
 }
 
-func (b *Board) GetCurrent() *Player {
-	return b.current
-}
-
-func (b *Board) toggle() {
-	if b.current == b.player1 {
-		b.current = b.player2
-		return
-	}
-	b.current = b.player1
-}
-
 func (b *Board) Reset(index int) {
 	b.fields[b.byIndex(index)] = b.empty
 }
@@ -167,11 +161,9 @@ func (b *Board) ResetBoard() {
 
 func (b *Board) Set(index int, player *Player) {
 	if b.Won() {
-		log.Println("game already ended!")
 		return
 	}
 	b.fields[b.byIndex(index)] = player
-	b.toggle()
 }
 
 func (b *Board) SetPos(p Pos, player *Player) {

@@ -2,7 +2,6 @@ package game
 
 import (
 	"image"
-	"image/color"
 
 	"gioui.org/layout"
 	"gioui.org/unit"
@@ -42,7 +41,7 @@ func New(router *page.Router) *Page {
 		game:   xxo.NewGame(),
 		grid: outlay.Grid{
 			Num:       3,
-			Axis:      layout.Vertical,
+			Axis:      layout.Horizontal,
 			Alignment: layout.Middle,
 		},
 		cells: cells,
@@ -89,13 +88,15 @@ func (p *Page) fill(gtx C) D {
 
 	return p.grid.Layout(gtx, 9, func(gtx layout.Context, i int) D {
 		if p.cells[i].Clicked() && p.game.IsEmpty(i) {
-			p.game.Set(i, p.game.GetCurrent())
+			p.game.Lock()
+			p.game.Set(i, p.game.Player1())
 
 			if !p.game.Stopped() {
-				curr := p.game.GetCurrent()
-				idx := p.game.BestMove(curr)
-				p.game.Set(idx, curr)
+				opp := p.game.Player2()
+				idx := p.game.BestMove(opp)
+				p.game.Set(idx, opp)
 			}
+			p.game.Unlock()
 		}
 
 		size := lib.Max(
@@ -125,9 +126,9 @@ func (p *Page) button(gtx C, idx int, size int, highlight, ended bool) func(gtx 
 		btn.TextSize.U = unit.UnitPx
 		btn.TextSize.V = float32(size / 2)
 		if highlight {
-			btn.Background = color.NRGBA{A: 0xff, R: 255, G: 64, B: 64}
+			btn.Background = lib.SpanishOrange
 		} else if ended {
-			btn.Background = color.NRGBA{A: 0xff, R: 64, G: 64, B: 64}
+			btn.Background = lib.Onyx
 		}
 
 		d := btn.Layout(gtx)
