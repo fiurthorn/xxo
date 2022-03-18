@@ -103,7 +103,7 @@ func (p *Page) fill(gtx C) D {
 			lib.Min(gtx.Constraints.Min.X, gtx.Constraints.Min.Y),
 			lib.Min(gtx.Constraints.Max.X, gtx.Constraints.Max.Y),
 		)
-		size = size / 7
+		size = size / 6
 
 		highlight := ok && p.game.Contains(line, i)
 

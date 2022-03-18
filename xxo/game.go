@@ -1,6 +1,7 @@
 package xxo
 
 import (
+	"log"
 	"math/rand"
 	"sync"
 	"time"
@@ -94,17 +95,56 @@ func (g *Game) Opposite(player *Player) *Player {
 	return g.board.player1
 }
 
-//
-// select the move with best case to win e.g. X..]
-//                                       e.g. _O_]
-//                                       e.g. ___]
-//
+var possibleFields = map[int][][2]int{
+	0: {{3, 6}, {4, 8}, {1, 2}},
+	1: {{0, 2}, {4, 7}},
+	2: {{0, 1}, {4, 6}, {5, 8}},
+	3: {{0, 6}, {4, 5}},
+	4: {{3, 5}, {0, 8}, {1, 7}, {2, 6}},
+	5: {{3, 4}, {2, 8}},
+	6: {{3, 0}, {4, 2}, {7, 8}},
+	7: {{6, 8}, {4, 1}},
+	8: {{6, 7}, {0, 4}, {2, 5}},
+}
+
+func (g *Game) adjust(solutions []int, p *Player) (selection []int) {
+	opposite := g.Opposite(p)
+
+	for _, idx := range solutions {
+		lines := possibleFields[idx]
+		for _, line := range lines {
+			var count int
+			a, b := g.board.Get(line[0]), g.board.Get(line[1])
+
+			if a == g.board.empty || b == g.board.empty {
+				count++
+			}
+			if a == opposite || b == opposite {
+				count++
+			}
+			if count == 2 {
+				selection = append(selection, idx)
+			}
+		}
+	}
+
+	return
+}
+
 func (g *Game) BestMove(player *Player) int {
 	solutions := Solutions{[]int{}}
 	_ = g.minimax(player, &solutions)
 
-	index := rand.Intn(len(solutions.moves))
-	return solutions.moves[index]
+	log.Printf("move:%v", solutions.selection)
+	selection := g.adjust(solutions.selection, player)
+	length := len(selection)
+	if length > 0 && length < len(solutions.selection) {
+		log.Printf("shrink move:%v -> %v", solutions.selection, selection)
+		solutions.selection = selection
+	}
+
+	index := rand.Intn(len(solutions.selection))
+	return solutions.selection[index]
 }
 
 func (g *Game) minimax(player *Player, sol *Solutions) int {
@@ -120,12 +160,12 @@ func (g *Game) minimax(player *Player, sol *Solutions) int {
 			g.board.Reset(i)
 			if score > bestScore {
 				if sol != nil {
-					sol.moves = []int{}
+					sol.selection = []int{}
 				}
 				bestScore = score
 			}
 			if bestScore == score && sol != nil {
-				sol.moves = append(sol.moves, i)
+				sol.selection = append(sol.selection, i)
 			}
 		}
 	}
@@ -133,5 +173,5 @@ func (g *Game) minimax(player *Player, sol *Solutions) int {
 }
 
 type Solutions struct {
-	moves []int
+	selection []int
 }

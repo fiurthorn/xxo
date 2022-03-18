@@ -3,3 +3,4 @@ __debug_bin*
 build/
 
 __debug_bin
+*.syso
