@@ -10,7 +10,6 @@ import (
 	"gioui.org/io/system"
 	"gioui.org/layout"
 	"gioui.org/op"
-	"gioui.org/unit"
 	"gioui.org/widget/material"
 	"github.com/fiurthorn/xxo/lib"
 	"github.com/fiurthorn/xxo/page"
@@ -36,16 +35,19 @@ func main() {
 }
 
 func loop(w *app.Window) error {
-	th := material.NewTheme(gofont.Collection())
-	th.TextSize = unit.Sp(14.)
-	th.Bg = lib.Cultured
-	th.Fg = lib.BlueSapphire
-	th.ContrastBg = lib.BlueSapphire
-	th.ContrastFg = lib.Cultured
+	th := material.
+		NewTheme(gofont.Collection()).
+		WithPalette(material.Palette{
+			Bg:         lib.Cultured,
+			Fg:         lib.BlueSapphire,
+			ContrastBg: lib.BlueSapphire,
+			ContrastFg: lib.Cultured,
+		})
+	// th.TextSize = unit.Sp(14.)
 
 	var ops op.Ops
 
-	router := page.NewRouter(th)
+	router := page.NewRouter(&th)
 	router.Register(0, game.New(&router))
 	router.Register(1, settings.New(&router))
 
