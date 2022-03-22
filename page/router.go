@@ -69,6 +69,7 @@ func (r *Router) SwitchTo(tag interface{}) {
 	r.current = tag
 	r.AppBar.Title = navItem.Name
 	r.AppBar.SetActions(p.Actions(), p.Overflow())
+	p.Show()
 }
 
 func (r *Router) Layout(gtx layout.Context) layout.Dimensions {

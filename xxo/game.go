@@ -12,24 +12,34 @@ func init() {
 }
 
 func NewGame() *Game {
+	board := NewBoard()
 	return &Game{
-		board: NewBoard(),
-		m:     &sync.Mutex{},
+		board:   board,
+		m:       &sync.Mutex{},
+		current: board.player1,
 	}
 }
 
 type Game struct {
-	board *Board
+	board   *Board
+	current *Player
 
 	fields [size]string
 	m      sync.Locker
+	locked bool
+}
+
+func (g *Game) Locked() bool {
+	return g.locked
 }
 
 func (g *Game) Lock() {
 	g.m.Lock()
+	g.locked = true
 }
 
 func (g *Game) Unlock() {
+	g.locked = false
 	g.m.Unlock()
 }
 
@@ -54,6 +64,19 @@ func (g *Game) Player2() *Player {
 	return g.board.player2
 }
 
+func (g *Game) CurrentPlayer() *Player {
+	return g.current
+}
+
+func (g *Game) TogglePlayer() *Player {
+	if g.current == g.board.player1 {
+		g.current = g.board.player2
+	} else {
+		g.current = g.board.player1
+	}
+	return g.current
+}
+
 func (g *Game) IsEmpty(i int) bool {
 	return g.board.IsEmpty(i)
 }
@@ -72,6 +95,7 @@ func (g *Game) Set(i int, p *Player) {
 }
 
 func (g *Game) update() {
+	log.Println("update")
 	for i := 0; i < size; i++ {
 		g.fields[i] = g.board.fields[i].Symbol()
 	}

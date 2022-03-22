@@ -10,4 +10,5 @@ type Page interface {
 	Overflow() []component.OverflowAction
 	Layout(gtx layout.Context) layout.Dimensions
 	NavItem() component.NavItem
+	Show()
 }

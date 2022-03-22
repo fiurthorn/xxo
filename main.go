@@ -10,6 +10,7 @@ import (
 	"gioui.org/io/system"
 	"gioui.org/layout"
 	"gioui.org/op"
+	"gioui.org/unit"
 	"gioui.org/widget/material"
 	"github.com/fiurthorn/xxo/lib"
 	"github.com/fiurthorn/xxo/page"
@@ -22,10 +23,15 @@ type (
 	D = layout.Dimensions
 )
 
+var size float32 = 420.0
+
 func main() {
 	flag.Parse()
 	go func() {
-		w := app.NewWindow()
+		w := app.NewWindow(
+			app.Size(unit.Dp(size/16*9), unit.Dp(size)),
+			app.Title("tic tac toe"),
+		)
 		if err := loop(w); err != nil {
 			log.Fatal(err)
 		}
@@ -47,9 +53,11 @@ func loop(w *app.Window) error {
 
 	var ops op.Ops
 
+	config := lib.Config{}
+
 	router := page.NewRouter(&th)
-	router.Register(0, game.New(&router))
-	router.Register(1, settings.New(&router))
+	router.Register(0, game.New(&router, &config))
+	router.Register(1, settings.New(&router, &config))
 
 	for {
 		select {

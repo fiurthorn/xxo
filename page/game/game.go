@@ -24,20 +24,28 @@ type Page struct {
 	*page.Router
 
 	game       *xxo.Game
+	config     *lib.Config
 	grid       outlay.Grid
 	newGameBtn widget.Clickable
 
 	cells [9]*widget.Clickable
+
+	auto chan int
 }
 
-func New(router *page.Router) *Page {
+func (p *Page) Show() {
+	p.auto <- -1
+}
+
+func New(router *page.Router, config *lib.Config) *Page {
 	cells := [9]*widget.Clickable{}
 	for i, length := 0, len(cells); i < length; i++ {
 		cell := widget.Clickable{}
 		cells[i] = &cell
 	}
-	return &Page{
+	p := Page{
 		Router: router,
+		config: config,
 		game:   xxo.NewGame(),
 		grid: outlay.Grid{
 			Num:       3,
@@ -45,6 +53,29 @@ func New(router *page.Router) *Page {
 			Alignment: layout.Middle,
 		},
 		cells: cells,
+		auto:  make(chan int, 9),
+	}
+	go p.Auto()
+	return &p
+}
+
+func (p *Page) Auto() {
+	for task := range p.auto {
+		p.game.Lock()
+		if task >= 0 {
+			p.game.Set(task, p.game.CurrentPlayer())
+			p.game.TogglePlayer()
+		}
+		if !p.game.Stopped() {
+			next := p.game.CurrentPlayer()
+			if p.config.Ai1.Value && next == p.game.Player1() {
+				p.auto <- p.game.BestMove(next)
+			}
+			if p.config.Ai2.Value && next == p.game.Player2() {
+				p.auto <- p.game.BestMove(next)
+			}
+		}
+		p.game.Unlock()
 	}
 }
 
@@ -73,6 +104,7 @@ func (p *Page) NavItem() component.NavItem {
 func (p *Page) Layout(gtx C) D {
 	if p.newGameBtn.Clicked() {
 		p.game.ResetBoard()
+		p.auto <- -1
 	}
 
 	return layout.Center.Layout(
@@ -82,21 +114,15 @@ func (p *Page) Layout(gtx C) D {
 }
 
 func (p *Page) fill(gtx C) D {
+	locked := p.game.Locked()
+
 	space := unit.Dp(8)
 	line, ok := p.game.Winning()
-	ended := p.game.Stopped()
+	ended := !locked && p.game.Stopped()
 
 	return p.grid.Layout(gtx, 9, func(gtx layout.Context, i int) D {
 		if p.cells[i].Clicked() && p.game.IsEmpty(i) {
-			p.game.Lock()
-			p.game.Set(i, p.game.Player1())
-
-			if !p.game.Stopped() {
-				opp := p.game.Player2()
-				idx := p.game.BestMove(opp)
-				p.game.Set(idx, opp)
-			}
-			p.game.Unlock()
+			p.auto <- i
 		}
 
 		size := lib.Max(
@@ -105,7 +131,7 @@ func (p *Page) fill(gtx C) D {
 		)
 		size = size / 6
 
-		highlight := ok && p.game.Contains(line, i)
+		highlight := !locked && ok && p.game.Contains(line, i)
 
 		return layout.
 			Inset{Top: space, Bottom: space, Left: space, Right: space}.
